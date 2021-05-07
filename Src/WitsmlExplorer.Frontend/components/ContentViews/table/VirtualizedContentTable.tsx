@@ -1,4 +1,4 @@
-import React, { forwardRef, ReactElement, useContext, useState } from "react";
+import React, { forwardRef, ReactElement, useState } from "react";
 import styled from "styled-components";
 import Moment from "react-moment";
 import orderBy from "lodash/orderBy";
@@ -6,17 +6,11 @@ import { Checkbox, TableCell as MuiTableCell, TableSortLabel } from "@material-u
 import memoizeOne from "memoize-one";
 import AutoSizer from "react-virtualized-auto-sizer";
 import { FixedSizeList as List } from "react-window";
-import OperationContext from "../../../contexts/operationContext";
-import NavigationContext from "../../../contexts/navigationContext";
-import OperationType from "../../../contexts/operationType";
 import { DateFormat } from "../../Constants";
 import { ContentTableColumn, ContentTableProps, ContentTableRow, ContentType, getCheckedRows, getSelectedRange, Order } from "./tableParts";
 import { colors } from "../../../styles/Colors";
 import { useTheme } from "@material-ui/core/styles";
-import { getContextMenuPosition } from "../../ContextMenus/ContextMenu";
-import MnemonicsContextMenu from "../../ContextMenus/MnemonicsContextMenu";
-import { LogCurveInfoRow } from "../LogCurveInfoListView";
-import { DeleteLogCurveValuesJob, IndexRange } from "../../../models/jobs/deleteLogCurveValuesJob";
+import { IndexRange } from "../../../models/jobs/deleteLogCurveValuesJob";
 import LogObject from "../../../models/logObject";
 
 interface RowProps {
@@ -32,11 +26,9 @@ interface RowProps {
 const columnRefs: string[] = [];
 
 export const VirtualizedContentTable = (props: ContentTableProps): React.ReactElement => {
-  const { columns, data, onSelect, checkableRows } = props;
+  const { columns, data, onSelect, onContextMenu, checkableRows } = props;
   const [checkedContentItems, setCheckedContentItems] = useState<ContentTableRow[]>([]);
-  const { dispatchOperation } = useContext(OperationContext);
-  const { navigationState } = useContext(NavigationContext);
-  const { selectedLog, selectedLogCurveInfo } = navigationState;
+
   const [sortOrder, setSortOrder] = useState<Order>(Order.Ascending);
   const [sortedColumn, setSortedColumn] = useState<string>(columns[0].property);
   const [activeIndexRange, setActiveIndexRange] = useState<number[]>([]);
@@ -66,13 +58,6 @@ export const VirtualizedContentTable = (props: ContentTableProps): React.ReactEl
     }
   };
 
-  const onContextMenu = (event: React.MouseEvent<HTMLDivElement>) => {
-    const deleteLogCurveValuesJob = getDeleteLogCurveValuesJob(selectedLogCurveInfo, checkedContentItems, selectedLog);
-    const contextMenuProps = { deleteLogCurveValuesJob, dispatchOperation };
-    const position = getContextMenuPosition(event);
-    dispatchOperation({ type: OperationType.DisplayContextMenu, payload: { component: <MnemonicsContextMenu {...contextMenuProps} />, position } });
-  };
-
   const Row = (props: RowProps) => {
     const {
       index,
@@ -81,13 +66,12 @@ export const VirtualizedContentTable = (props: ContentTableProps): React.ReactEl
     } = props;
     const item = items[index];
     return (
-      <div style={style}>
-        <RowWrapper key={"Row-" + index} columns={columns} checkableRows={checkableRows} width={width} compactMode={isCompactMode}>
+        <RowWrapper key={"Row-" + index} style={style} columns={columns} checkableRows={checkableRows} width={width} compactMode={isCompactMode}>
           <TableRow
             key={"TableRow-" + index}
             hover
             onClick={(event) => toggleRow(event, item)}
-            onContextMenu={onContextMenu ? (event) => onContextMenu(event) : (e) => e.preventDefault()}
+            onContextMenu={onContextMenu ? (event) => onContextMenu(event,item,checkedContentItems) : (e) => e.preventDefault()}
           >
             {checkableRows && (
               <TableDataCell key={`${index}-checkbox`} component={"div"}>
@@ -114,7 +98,6 @@ export const VirtualizedContentTable = (props: ContentTableProps): React.ReactEl
               ))}
           </TableRow>
         </RowWrapper>
-      </div>
     );
   };
 
@@ -187,7 +170,7 @@ export const VirtualizedContentTable = (props: ContentTableProps): React.ReactEl
                 const itemData = getItemData(columns, width, data);
 
                 return (
-                  <List height={height} width={width} itemCount={data.length} itemSize={ROW_SIZE} itemKey={itemKey} itemData={itemData} innerElementType={innerGridElementType}>
+                  <List  height={height} width={width} itemCount={data.length} itemSize={ROW_SIZE} itemKey={itemKey} itemData={itemData} innerElementType={innerGridElementType}>
                     {Row}
                   </List>
                 );
@@ -222,22 +205,6 @@ export const getIndexRanges = (checkedContentItems: ContentTableRow[], selectedL
   }, []);
 };
 
-const getDeleteLogCurveValuesJob = (currentSelected: LogCurveInfoRow[], checkedContentItems: ContentTableRow[], selectedLog: LogObject) => {
-  const indexRanges = getIndexRanges(checkedContentItems, selectedLog);
-  const mnemonics = currentSelected.map((logCurveInfoRow) => logCurveInfoRow.mnemonic);
-
-  const deleteLogCurveValuesJob: DeleteLogCurveValuesJob = {
-    logReference: {
-      wellUid: selectedLog.wellUid,
-      wellboreUid: selectedLog.wellboreUid,
-      logUid: selectedLog.uid
-    },
-    mnemonics: mnemonics,
-    indexRanges: indexRanges
-  };
-  return deleteLogCurveValuesJob;
-};
-
 const format = (type: ContentType, data: string | Date): string | ReactElement => {
   switch (type) {
     case ContentType.DateTime:
@@ -257,7 +224,7 @@ const formatDate = (date: Date, format: string): string | ReactElement => {
   }
 };
 
-const configureTemplateColumns = memoizeOne((checkableRows: boolean, isHeader: boolean, width: any, columns: ContentTableColumn[]) => {
+const configureTemplateColumns = memoizeOne((checkableRows: boolean, isHeader: boolean, columns: ContentTableColumn[]) => {
   let templateColumns = [];
 
   if (isHeader) {
@@ -287,7 +254,7 @@ interface RowWrapperProps {
 
 const RowWrapper = styled.div<RowWrapperProps>`
   display: grid;
-  grid-template-columns: ${(props) => configureTemplateColumns(props.checkableRows, props.isHeader, props.width, props.columns)};
+  grid-template-columns: ${(props) => configureTemplateColumns(props.checkableRows, props.isHeader, props.columns)};
   grid-auto-rows: minmax(${(props) => (props.compactMode ? "2rem" : "3rem")}, auto);
   font-size: 0.875rem;
   width: 100%;

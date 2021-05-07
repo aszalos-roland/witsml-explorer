@@ -1,5 +1,5 @@
-import React, { useContext, useEffect, useState } from "react";
-import { ContentTable, ContentTableColumn, ContentTableRow, ContentType } from "./table";
+import React, { useCallback, useContext, useEffect, useState } from "react";
+import { ContentTable, ContentTableColumn, ContentTableRow, ContentType, VirtualizedContentTable } from "./table";
 import LogCurveInfo from "../../models/logCurveInfo";
 import LogObjectService from "../../services/logObjectService";
 import { truncateAbortHandler } from "../../services/apiClient";
@@ -51,13 +51,13 @@ export const LogCurveInfoListView = (): React.ReactElement => {
     }
   }, [selectedLog]);
 
-  const onContextMenu = (event: React.MouseEvent<HTMLLIElement>, {}, checkedLogCurveInfoRows: LogCurveInfoRow[]) => {
+  const onContextMenu = useCallback((event: React.MouseEvent<HTMLLIElement>, {}, checkedLogCurveInfoRows: LogCurveInfoRow[]) => {
     const contextMenuProps: LogCurveInfoContextMenuProps = { checkedLogCurveInfoRows, dispatchOperation, dispatchNavigation, selectedLog, selectedServer };
     const position = getContextMenuPosition(event);
     dispatchOperation({ type: OperationType.DisplayContextMenu, payload: { component: <LogCurveInfoContextMenu {...contextMenuProps} />, position } });
-  };
+  }, []);
 
-  const getTableDate = () => {
+  const getTableData = useCallback(() => {
     return logCurveInfoList.map((logCurveInfo) => {
       return {
         id: `${selectedLog.uid}-${logCurveInfo.mnemonic}`,
@@ -75,7 +75,7 @@ export const LogCurveInfoListView = (): React.ReactElement => {
         wellboreName: selectedWellbore.name
       };
     });
-  };
+  }, [logCurveInfoList]);
 
   const columns: ContentTableColumn[] = [
     { property: "mnemonic", label: "Mnemonic", type: ContentType.String },
@@ -87,7 +87,15 @@ export const LogCurveInfoListView = (): React.ReactElement => {
     { property: "uid", label: "uid", type: ContentType.String }
   ];
 
-  return selectedLog && !isFetchingData ? <ContentTable columns={columns} data={getTableDate()} onContextMenu={onContextMenu} checkableRows /> : <></>;
+  return selectedLog && !isFetchingData ? (
+    logCurveInfoList.length < 100 ? (
+      <ContentTable columns={columns} data={getTableData()} onContextMenu={onContextMenu} checkableRows />
+    ) : (
+      <VirtualizedContentTable columns={columns} data={getTableData()} onContextMenu={onContextMenu} checkableRows />
+    )
+  ) : (
+    <></>
+  );
 };
 
 export default LogCurveInfoListView;
