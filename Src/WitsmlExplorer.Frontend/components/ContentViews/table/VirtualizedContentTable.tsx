@@ -28,7 +28,6 @@ const columnRefs: string[] = [];
 export const VirtualizedContentTable = (props: ContentTableProps): React.ReactElement => {
   const { columns, data, onSelect, onContextMenu, checkableRows } = props;
   const [checkedContentItems, setCheckedContentItems] = useState<ContentTableRow[]>([]);
-
   const [sortOrder, setSortOrder] = useState<Order>(Order.Ascending);
   const [sortedColumn, setSortedColumn] = useState<string>(columns[0].property);
   const [activeIndexRange, setActiveIndexRange] = useState<number[]>([]);
@@ -71,7 +70,7 @@ export const VirtualizedContentTable = (props: ContentTableProps): React.ReactEl
             key={"TableRow-" + index}
             hover
             onClick={(event) => toggleRow(event, item)}
-            onContextMenu={onContextMenu ? (event) => onContextMenu(event,item,checkedContentItems) : (e) => e.preventDefault()}
+            onContextMenu={onContextMenu ? (event) => onContextMenu(event, item, checkedContentItems) : (e) => e.preventDefault()}
           >
             {checkableRows && (
               <TableDataCell key={`${index}-checkbox`} component={"div"}>

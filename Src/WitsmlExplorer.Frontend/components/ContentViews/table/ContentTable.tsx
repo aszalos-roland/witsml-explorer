@@ -85,12 +85,7 @@ export const ContentTable = (props: ContentTableProps): React.ReactElement => {
       <TableBody>
         {data.map((item, index) => {
           return (
-            <TableRow
-              hover
-              key={index}
-              onContextMenu={onContextMenu ? (event) => onContextMenu(event, item, checkedContentItems) : (e) => e.preventDefault()}
-              onClick={(event) => selectRow(event, item)}
-            >
+            <TableRow hover key={index} onContextMenu={onContextMenu ? (event) => onContextMenu(event, item, checkedContentItems) : (e) => e.preventDefault()}>
               {checkableRows && (
                 <TableDataCell>
                   <Checkbox onClick={(event) => toggleRow(event, item)} checked={checkedContentItems.includes(item)} />
@@ -103,6 +98,7 @@ export const ContentTable = (props: ContentTableProps): React.ReactElement => {
                   clickable={onSelect ? "true" : "false"}
                   type={column.type}
                   align={column.type === ContentType.Number ? "right" : "left"}
+                    onClick={(event) => selectRow(event, item)}
                 >
                   {format(column.type, item[column.property])}
                 </TableDataCell>
