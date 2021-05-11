@@ -38,7 +38,7 @@ export const CurveValuesView = (): React.ReactElement => {
   const { dispatchOperation } = useContext(OperationContext);
   const { selectedWell, selectedWellbore, selectedLog, selectedLogCurveInfo } = navigationState;
   const [columns, setColumns] = useState<ContentTableColumn[]>([]);
-  const [tableData, setTableData] = useState<CurveValueRow[]>();
+  const [tableData, setTableData] = useState<CurveValueRow[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [progress, setProgress] = useState<number>(0);
 
@@ -161,8 +161,8 @@ export const CurveValuesView = (): React.ReactElement => {
   return (
     <Container>
       {isLoading && <LinearProgress variant={"determinate"} value={progress} />}
-      {!isLoading && !tableData && <Message>No data</Message>}
-      {columns && tableData?.length > 0 && <VirtualizedContentTable columns={columns} onContextMenu={onContextMenu} data={tableData} checkableRows={true} />}
+      {!isLoading && !tableData.length && <Message>No data</Message>}
+      {columns && tableData.length > 0 && <VirtualizedContentTable columns={columns} onContextMenu={onContextMenu} data={tableData} checkableRows={true} />}
     </Container>
   );
 };
