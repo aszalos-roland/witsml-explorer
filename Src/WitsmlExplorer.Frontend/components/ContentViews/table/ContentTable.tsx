@@ -27,7 +27,7 @@ export const ContentTable = (props: ContentTableProps): React.ReactElement => {
       setSortOrder(() => order);
       setSortedColumn(() => columnToSort);
     },
-    [sortedColumn]
+    [sortedColumn, sortOrder]
   );
 
   const selectRow = useCallback(
@@ -60,6 +60,13 @@ export const ContentTable = (props: ContentTableProps): React.ReactElement => {
     }
   }, [data.length, checkedContentItems.length]);
 
+  const isInCheckedContentItems = useCallback(
+    (item: any): boolean => {
+      return checkedContentItems.findIndex((checkedRow: ContentTableRow) => item.id === checkedRow.id) !== -1;
+    },
+    [checkedContentItems]
+  );
+
   return (
     <Table>
       <TableHead>
@@ -88,7 +95,7 @@ export const ContentTable = (props: ContentTableProps): React.ReactElement => {
             <TableRow hover key={index} onContextMenu={onContextMenu ? (event) => onContextMenu(event, item, checkedContentItems) : (e) => e.preventDefault()}>
               {checkableRows && (
                 <TableDataCell>
-                  <Checkbox onClick={(event) => toggleRow(event, item)} checked={checkedContentItems.includes(item)} />
+                  <Checkbox onClick={(event) => toggleRow(event, item)} checked={isInCheckedContentItems(item)} />
                 </TableDataCell>
               )}
               {columns.map((column) => (
@@ -98,7 +105,7 @@ export const ContentTable = (props: ContentTableProps): React.ReactElement => {
                   clickable={onSelect ? "true" : "false"}
                   type={column.type}
                   align={column.type === ContentType.Number ? "right" : "left"}
-                    onClick={(event) => selectRow(event, item)}
+                  onClick={(event) => selectRow(event, item)}
                 >
                   {format(column.type, item[column.property])}
                 </TableDataCell>
