@@ -1,4 +1,4 @@
-import React, { useContext } from "react";
+import React, { useCallback, useContext } from "react";
 import { TreeItem } from "@material-ui/lab";
 import styled from "styled-components";
 import { TreeItemProps } from "@material-ui/lab/TreeItem";
@@ -20,10 +20,13 @@ const StyledTreeItem = (props: StyledTreeItemProps): React.ReactElement => {
   const { dispatchNavigation } = useContext(NavigationContext);
   const isCompactMode = useTheme().props.MuiCheckbox.size === "small";
 
-  const toggleTreeNode = (props: StyledTreeItemProps) => {
-    const toggleTreeNode: ToggleTreeNodeAction = { type: NavigationType.ToggleTreeNode, payload: { nodeId: props.nodeId } };
-    dispatchNavigation(toggleTreeNode);
-  };
+  const toggleTreeNode = useCallback(
+    (props: StyledTreeItemProps) => {
+      const toggleTreeNode: ToggleTreeNodeAction = { type: NavigationType.ToggleTreeNode, payload: { nodeId: props.nodeId } };
+      dispatchNavigation(toggleTreeNode);
+    },
+    [props.nodeId]
+  );
 
   return (
     <TreeItem
